@@ -5,22 +5,30 @@ import os
 WEBHOOK_URL = os.environ.get('DISCORD_URL')
 SITE_URL = "https://www.kiwu.ac.kr/ko/cms/FR_CON/index.do?MENU_ID=310"
 
-# 1. 로봇이 사람(크롬 브라우저)인 척하게 해주는 모자예요! (학교 홈페이지가 막지 않도록)
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
 print("1. 학교 홈페이지에 똑똑똑 노크합니다...")
 response = requests.get(SITE_URL, headers=headers)
-print(f"홈페이지 문 열림 상태: {response.status_code} (200이면 정상!)")
+print(f"홈페이지 문 열림 상태: {response.status_code}")
 
 soup = BeautifulSoup(response.text, 'html.parser')
-notice_links = soup.select('tbody tr a')
 
-print(f"찾아낸 링크 개수: {len(notice_links)}개")
+# '표(table)' 안에 있는 모든 링크(a 태그)를 찾습니다. (구조가 달라도 다 잡을 수 있어요!)
+notice_links = soup.select('table a')
 
-if len(notice_links) > 0:
-    new_title = notice_links[0].text.strip()
+real_notices = []
+for link in notice_links:
+    title = link.text.strip()
+    # 3글자 이상이고, 파일 다운로드 링크가 아닌 경우만 '진짜 제목'으로 인정합니다.
+    if len(title) > 3 and "첨부파일" not in title:
+        real_notices.append(title)
+
+print(f"찾아낸 진짜 제목 개수: {len(real_notices)}개")
+
+if len(real_notices) > 0:
+    new_title = real_notices[0]
     print(f"2. 홈페이지 최신 글 제목: {new_title}")
     
     try:
@@ -44,4 +52,4 @@ if len(notice_links) > 0:
     else:
         print("4. 에구, 아직 새로운 글이 안 올라왔네요. (그래서 알림 안 보냄!)")
 else:
-    print("앗! 글 목록을 못 찾았어요. 홈페이지 구조가 달라서 코드를 수정해야 해요!")
+    print("앗! 홈페이지에서 아무 글자도 못 찾았어요. 홈페이지 주소나 구조 확인이 필요해요!")
