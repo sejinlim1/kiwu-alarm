@@ -1,0 +1,35 @@
+name: 매일 아침 6시 알람
+
+on:
+  schedule:
+    # 깃허브 시간은 우리나라보다 9시간 느려서, 우리 아침 6시는 깃허브 시간으로 밤 9시(21시)야.
+    - cron: '0 21 * * *'
+  workflow_dispatch: # 내가 원할 때 언제든 테스트할 수 있는 버튼 기능!
+
+permissions:
+  contents: write # 로봇이 수첩에 마지막 글을 메모할 수 있게 허락해 주는 거야.
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 로봇의 집 열기
+        uses: actions/checkout@v4
+
+      - name: 파이썬(로봇의 뇌) 준비하기
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: 로봇 준비물 챙기기
+        run: pip install -r requirements.txt
+
+      - name: 로봇 일 시키기!
+        env:
+          DISCORD_URL: ${{ secrets.DISCORD_URL }}
+        run: python bot.py
+
+      - name: 로봇 수첩(마지막 글 제목) 저장하기
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "마지막 공지사항 기억하기"
